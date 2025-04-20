@@ -1,0 +1,35 @@
+
+    Project Breakdown
+        1. Problem Statement: 
+            Goal: Automatically group/cluster similar images (e.g., by person, object).
+
+            Example:
+                Input: Folder of 20 mixed images (mubeen, rohsi).
+                Output: Folders/Groups of similar images.
+
+
+        2. Stack:
+            Backend:  Node.js + Express.js (API for predictions).
+            Frontend: EJS (HTML templates) + Bootstrap/CSS.
+            ML:       Python (for SVM training)     
+
+
+        3. Tools & Libraries:
+            Category	           Tools
+            Language	           NAN
+            ML Framework	       NAN
+            Computer Vision	       NAN
+            Data Handling	       NAN
+            Visualization	       NAN
+            Deployment	           NAN
+
+
+        4. Project Timeline
+            Week	    Task
+            1	        Data collection & preprocessing
+            2	        Feature extraction + SVM training
+            3	        Evaluation + error analysis
+            4	        Node.js Backend + EJS Frontend
+
+
+        - 10-20 photos per friend
