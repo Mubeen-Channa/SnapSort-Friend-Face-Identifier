@@ -1,35 +1,130 @@
+    Phase 1: Project Setup & Data Flow
+        1.1 Define the Workflow
+            Input: User uploads an image (or a batch of images).
 
-    Project Breakdown
-        1. Problem Statement: 
-            Goal: Automatically group/cluster similar images (e.g., by person, object).
+            Processing:
+                Detect faces in the image.
+                Extract facial features (encodings).
+                Compare with existing faces in the dataset.
 
-            Example:
-                Input: Folder of 20 mixed images (mubeen, rohsi).
-                Output: Folders/Groups of similar images.
+            Output:
+                If match found → Save image in the matched person’s folder.
+                If no match → Create a new folder for the new person.
 
-
-        2. Stack:
-            Backend:  Node.js + Express.js (API for predictions).
-            Frontend: EJS (HTML templates) + Bootstrap/CSS.
-            ML:       Python (for SVM training)     
-
-
-        3. Tools & Libraries:
-            Category	           Tools
-            Language	           NAN
-            ML Framework	       NAN
-            Computer Vision	       NAN
-            Data Handling	       NAN
-            Visualization	       NAN
-            Deployment	           NAN
-
-
-        4. Project Timeline
-            Week	    Task
-            1	        Data collection & preprocessing
-            2	        Feature extraction + SVM training
-            3	        Evaluation + error analysis
-            4	        Node.js Backend + EJS Frontend
+        1.2 Folder Structure
+            project/  
+            │── dataset/                  # Main dataset (auto-created)  
+            │   ├── Person_1/             # Each person gets a folder  
+            │   │   ├── face1.jpg  
+            │   │   └── face2.jpg  
+            │   └── Person_2/  
+            │── known_encodings.pkl       # Saved face encodings (for persistence)  
+            │── app.py                    # Main Python script  
+            │── test_images/              # Folder for testing new images  
 
 
-        - 10-20 photos per friend
+    Phase 2: Core Modules
+        2.1 Face Detection
+            Tools: face_recognition (uses dlib) or OpenCV’s Haar Cascades.
+            Function: Detect faces and extract coordinates.
+
+            python
+            def detect_faces(image_path):
+                image = face_recognition.load_image_file(image_path)
+                face_locations = face_recognition.face_locations(image)
+                return face_locations, image
+
+        2.2 Face Encoding
+            Tools: face_recognition generates 128-dimension embeddings.
+            Function: Convert faces to numerical vectors for comparison.
+
+            python
+            def encode_face(image, face_locations):
+                encodings = face_recognition.face_encodings(image, face_locations)
+                return encodings
+
+        2.3 Face Comparison
+            Logic: Compare new face encodings with stored ones using Euclidean distance (built into face_recognition.compare_faces).
+            Threshold: Default is 0.6 (lower = stricter).
+
+            python
+            def compare_faces(new_encoding, known_encodings, threshold=0.6):
+                for name, encodings in known_encodings.items():
+                    matches = face_recognition.compare_faces(encodings, new_encoding, threshold)
+                    if any(matches):
+                        return name
+                return None  # No match
+
+        2.4 Folder Management
+        Logic: Dynamically create folders for new people.
+
+        python
+        def save_image(image_path, person_id, dataset_path="dataset"):
+            os.makedirs(f"{dataset_path}/{person_id}", exist_ok=True)
+            shutil.copy(image_path, f"{dataset_path}/{person_id}/")
+
+
+    Phase 3: Integration & Testing
+        3.1 Main Script
+            Combine all modules into a pipeline:
+
+            python
+            def process_image(image_path, known_encodings):
+                # Step 1: Detect faces
+                face_locations, image = detect_faces(image_path)
+                if not face_locations:
+                    print("No faces detected!")
+                    return
+                
+                # Step 2: Encode faces
+                new_encodings = encode_face(image, face_locations)
+                
+                # Step 3: Compare and assign
+                for encoding in new_encodings:
+                    person_id = compare_faces(encoding, known_encodings)
+                    if not person_id:
+                        person_id = f"Person_{len(known_encodings) + 1}"
+                        known_encodings[person_id] = []
+                    save_image(image_path, person_id)
+                    known_encodings[person_id].append(encoding)
+                
+                return known_encodings
+
+        3.2 Testing
+            Test Case 1: Single face in image → Should create Person_1 folder.
+
+            Test Case 2: New face → Should create Person_2 folder.
+
+            Test Case 3: Existing face → Should save to the correct folder.
+
+
+    Phase 4: Enhancements (Optional)
+        Persistence: Save known_encodings to a file (e.g., .pkl) to avoid reprocessing.
+
+        python
+            import pickle
+            # Save
+            pickle.dump(known_encodings, open("known_encodings.pkl", "wb"))
+            # Load
+            known_encodings = pickle.load(open("known_encodings.pkl", "rb"))
+            Batch Processing: Process all images in a folder (os.listdir).
+
+        Web Interface: Use Flask to upload images via a browser.
+
+        Performance: Use GPU-accelerated face detection (dlib with CUDA).
+
+
+    Phase 5: Documentation & Submission
+        README.md: Explain setup, usage, and dependencies.
+
+        Report:
+            Approach (algorithms used).
+            Challenges (lighting, angles, false positives).
+            Results (accuracy metrics, e.g., % correctly grouped).
+
+        Next Steps:
+            Start with the basic version (Phases 1-3).
+
+            Test with 5-10 images first.
+
+            Expand with enhancements if time permits.
